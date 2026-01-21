@@ -155,6 +155,9 @@ struct tdev_attr {
 	KABI_RESERVE(4)
 };
 
+#define UMMU_SVA_SHARE_MODE 0
+#define UMMU_SVA_SEPARATE_MODE 1
+
 /**
  * struct ummu_core_ops - ummu ops for normal use, expand from iommu_ops.
  * @get_resource: Get resource for SVA.
@@ -165,6 +168,7 @@ struct tdev_attr {
  * @cfg_syn_all: synchronize all configuration table.
  * @cfg_syn: synchronize configuration table by tid.
  * @tdev_support_attr: Check whether the UMMU device supports the tdev attribute.
+ * @get_hw_cap: Get UMMU capability for device.
  */
 struct ummu_core_ops {
 	int (*get_resource)(struct ummu_base_domain *d, struct resource_args *arg);
@@ -177,6 +181,7 @@ struct ummu_core_ops {
 	void (*cfg_sync_all)(struct ummu_base_domain *d);
 	void (*cfg_sync)(struct ummu_base_domain *d);
 	bool (*tdev_support_attr)(struct ummu_core_device *dev, struct tdev_attr *attr);
+	int (*get_hw_cap)(struct device *dev, u32 *hw_cap);
 
 	KABI_RESERVE(1)
 	KABI_RESERVE(2)
@@ -185,7 +190,6 @@ struct ummu_core_ops {
 	KABI_RESERVE(5)
 	KABI_RESERVE(6)
 	KABI_RESERVE(7)
-	KABI_RESERVE(8)
 };
 
 /**
@@ -319,6 +323,8 @@ static inline void tdev_attr_init(struct tdev_attr *attr)
 	attr->name = NULL;
 	attr->priv = NULL;
 	attr->priv_len = 0;
+	attr->mode = MAPT_MODE_END;
+	attr->usva = false;
 }
 
 #ifdef CONFIG_UB_UMMU_CORE
@@ -496,6 +502,20 @@ bool ummu_is_ksva(struct iommu_domain *domain);
 bool ummu_is_sva(struct iommu_domain *domain);
 
 /**
+ * ummu_get_sva_mode() - Get the device SVA working mode
+ * @dev: device with SVA feature enabled
+ * Return: 0-sva share mode; 1- sva independent mode; other- invalid mode
+ */
+int ummu_get_sva_mode(struct device *dev);
+
+/**
+ * ummu_sva_get_features() - Get the sva feature of a peripheral.
+ * @dev: the device that work on sva mode
+ * Return: 32-bit value. bit0: 0- no IOPF cap; 1- with IOPF cap
+ */
+u32 ummu_sva_get_features(struct device *dev);
+
+/**
  * Bind device to a process mm.
  * @dev: related device.
  * @mm: process memory management.
@@ -631,6 +651,13 @@ struct device *ummu_core_alloc_tdev(struct tdev_attr *attr, u32 *ptid);
 int ummu_core_free_tdev(struct device *dev);
 
 /**
+ * ummu_alloc_tdev_separated() - Allocate a virtual device for sva separated mode.
+ * @ptid: tid pointer
+ * Return: device on success or NULL error.
+ */
+struct device *ummu_alloc_tdev_separated(u32 *ptid);
+
+/**
  * Get ummu_tid_type related to the tid.
  * @dev: the ummu_core device tid belongs to.
  * @tid: token id.
@@ -674,6 +701,16 @@ static inline bool ummu_is_ksva(struct iommu_domain *domain)
 static inline bool ummu_is_sva(struct iommu_domain *domain)
 {
 	return false;
+}
+
+static inline int ummu_get_sva_mode(struct device *dev)
+{
+	return 0;
+}
+
+static inline u32 ummu_sva_get_features(struct device *dev)
+{
+	return 0;
 }
 
 static inline struct iommu_sva *ummu_sva_bind_device(struct device *dev,
@@ -750,6 +787,11 @@ static inline struct device *ummu_core_alloc_tdev(struct tdev_attr *attr, u32 *p
 	return NULL;
 }
 
+static inline struct device *ummu_alloc_tdev_separated(u32 *ptid)
+{
+	return NULL;
+}
+
 static inline int ummu_core_free_tdev(struct device *dev)
 {
 	return -EOPNOTSUPP;
@@ -760,5 +802,45 @@ static inline int ummu_core_get_tid_type(struct ummu_core_device *dev, u32 tid,
 {
 	return -EOPNOTSUPP;
 }
+
 #endif /* CONFIG_UB_UMMU_CORE_DRIVER */
+
+#if IS_ENABLED(CONFIG_UB_UMMU_SVA_SEPARATED_PAGES)
+/**
+ * ummu_sva_matt_map() - Mapping interface in SVA-separated page table mode.
+ * @matt_domain: page table mapping context.
+ * @addr: mapping start address.
+ * @sgt: sg_table object for mapping memory.
+ * @prot: permission information.
+ *
+ * Return: 0 on success , others for an error.
+ */
+int ummu_sva_matt_map(struct ummu_matt_domain *matt_domain,
+		      unsigned long addr, struct sg_table *sgt,
+		      int prot);
+/**
+ * ummu_sva_matt_unmap() - unmapping interface in SVA-separated page table mode.
+ * @matt_domain: page table unmapping context.
+ * @addr: unmapping start address.
+ * @size: unmapping memory size.
+ *
+ * Return: 0 on success , others for an error.
+ */
+int ummu_sva_matt_unmap(struct ummu_matt_domain *matt_domain,
+			unsigned long addr, size_t size);
+#else
+static inline int ummu_sva_matt_map(struct ummu_matt_domain *matt_domain,
+				    unsigned long addr, struct sg_table *sgt,
+				    int prot)
+{
+	return -EINVAL;
+}
+
+static inline int ummu_sva_matt_unmap(struct ummu_matt_domain *matt_domain,
+				      unsigned long addr, size_t size)
+{
+	return -EINVAL;
+}
+#endif /* CONFIG_UB_UMMU_SVA_SEPARATED_PAGES */
+
 #endif /* _UMMU_CORE_H_ */
