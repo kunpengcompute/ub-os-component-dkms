@@ -158,6 +158,15 @@ struct tdev_attr {
 #define UMMU_SVA_SHARE_MODE 0
 #define UMMU_SVA_SEPARATE_MODE 1
 
+enum ummu_device_config_type {
+	UMMU_MPAM,
+};
+
+enum ummu_device_config_command {
+	UMMU_COMMAND_SET,
+	UMMU_COMMAND_GET,
+};
+
 /**
  * struct ummu_core_ops - ummu ops for normal use, expand from iommu_ops.
  * @get_resource: Get resource for SVA.
@@ -169,6 +178,7 @@ struct tdev_attr {
  * @cfg_syn: synchronize configuration table by tid.
  * @tdev_support_attr: Check whether the UMMU device supports the tdev attribute.
  * @get_hw_cap: Get UMMU capability for device.
+ * @dev_config: UMMU device config.
  */
 struct ummu_core_ops {
 	int (*get_resource)(struct ummu_base_domain *d, struct resource_args *arg);
@@ -182,8 +192,8 @@ struct ummu_core_ops {
 	void (*cfg_sync)(struct ummu_base_domain *d);
 	bool (*tdev_support_attr)(struct ummu_core_device *dev, struct tdev_attr *attr);
 	int (*get_hw_cap)(struct device *dev, u32 *hw_cap);
+	KABI_USE(1, int (*dev_config)(struct device *dev, int type, int command, void *data))
 
-	KABI_RESERVE(1)
 	KABI_RESERVE(2)
 	KABI_RESERVE(3)
 	KABI_RESERVE(4)
@@ -313,10 +323,6 @@ struct ummu_mpam {
 
 	KABI_RESERVE(1)
 	KABI_RESERVE(2)
-};
-
-enum ummu_device_config_type {
-	UMMU_MPAM = 0,
 };
 
 #if IS_ENABLED(CONFIG_UB_UMMU_CORE_DRIVER)
@@ -685,6 +691,17 @@ struct device *ummu_alloc_tdev_separated(u32 *ptid);
 int ummu_core_get_tid_type(struct ummu_core_device *dev, u32 tid,
 			   u32 *tid_type);
 
+/**
+ * ummu_core_dev_config() - ummu core dev config
+ * @dev: pointer to the device
+ * @type: configuration type (e.g., UMMU_MPAM)
+ * @command: operation command, e.g., UMMU_COMMAND_SET or UMMU_COMMAND_GET
+ * @data: pointer to configuration data (e.g., struct ummu_mpam *)
+ *
+ * Return: 0 on success , others for an error.
+ */
+int ummu_core_dev_config(struct device *dev, int type, int command, void *data);
+
 #else
 static inline int ummu_sva_grant_range(struct iommu_sva *sva, void *va,
 				       size_t size, int perm, void *cookie)
@@ -772,7 +789,7 @@ static inline int ummu_core_invalidate_cfg_table(u32 tid)
 	return -EOPNOTSUPP;
 }
 
-static inline int ummu_core_invalidate_cfg(struct ummu_invalid_cfg_param *param);
+static inline int ummu_core_invalidate_cfg(struct ummu_invalid_cfg_param *param)
 {
 	return -EOPNOTSUPP;
 }
@@ -821,6 +838,11 @@ static inline int ummu_core_free_tdev(struct device *dev)
 
 static inline int ummu_core_get_tid_type(struct ummu_core_device *dev, u32 tid,
 					 u32 *tid_type)
+{
+	return -EOPNOTSUPP;
+}
+
+static inline int ummu_core_dev_config(struct device *dev, int type, int command, void *data)
 {
 	return -EOPNOTSUPP;
 }
