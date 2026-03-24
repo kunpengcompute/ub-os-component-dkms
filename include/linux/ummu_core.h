@@ -694,7 +694,7 @@ int ummu_core_get_tid_type(struct ummu_core_device *dev, u32 tid,
 /**
  * ummu_core_dev_config() - ummu core dev config
  * @dev: pointer to the device
- * @type: configuration type (e.g., UMMU_MPAM)
+ * @type: defined in enum ummu_device_config_type (e.g., UMMU_MPAM)
  * @command: operation command, e.g., UMMU_COMMAND_SET or UMMU_COMMAND_GET
  * @data: pointer to configuration data (e.g., struct ummu_mpam *)
  *
