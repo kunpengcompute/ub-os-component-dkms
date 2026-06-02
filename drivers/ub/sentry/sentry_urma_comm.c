@@ -249,6 +249,11 @@ static int unimport_tjetty(int die_index)
 				sentry_urma_dev[die_index].tpid[i]);
 			sentry_urma_dev[die_index].tpid[i] = NULL;
 		}
+		if (sentry_urma_dev[die_index].tpid[i]) {
+			ubcore_delete_tpid(sentry_urma_dev[die_index].sentry_ubcore_dev,
+				sentry_urma_dev[die_index].tpid[i]);
+			sentry_urma_dev[die_index].tpid[i] = NULL;
+		}
 	}
 
 	return 0;
