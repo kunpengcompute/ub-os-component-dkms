@@ -1682,6 +1682,7 @@ static int heartbeat_thread(void *arg)
 {
 	int i, cnt;
 	int die_index;
+	union ubcore_eid remote_eid;
 
 	struct sentry_binary_msg heartbeat_msg = {0};
 
