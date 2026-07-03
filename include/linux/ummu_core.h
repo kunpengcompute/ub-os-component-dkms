@@ -25,18 +25,44 @@
 #define UMMU_DEV_READ 2
 #define UMMU_DEV_ATOMIC 4
 
+#define UMMU_SVA_SHARE_MODE 0
+#define UMMU_SVA_SEPARATE_MODE 1
+
+/**
+ * enum eid_type - the eid type
+ *
+ * @EID_NONE: nommal EID type
+ * @EID_BYPASS: ummu address translations are bypassed
+ * @EID_TYPE_MAX: max of eid type
+ */
 enum eid_type {
 	EID_NONE = 0,
 	EID_BYPASS,
 	EID_TYPE_MAX,
 };
 
+/**
+ * enum tid_alloc_mode - tid different allocated mode
+ *
+ * @TID_ALLOC_TRANSPARENT: use pasid as tid, no need to assign again
+ * @TID_ALLOC_ASSIGNED: pre-allocated tid, no need to assign again
+ * @TID_ALLOC_NORMAL: alloc tid normal
+ */
 enum tid_alloc_mode {
 	TID_ALLOC_TRANSPARENT = 0,
 	TID_ALLOC_ASSIGNED = 1,
 	TID_ALLOC_NORMAL = 2,
 };
 
+/**
+ * enum ummu_resource_type - SVA resource type
+ *
+ * @UMMU_BLOCK: mapt block
+ * @UMMU_QUEUE: permission queue
+ * @UMMU_QUEUE_LIST: permission queue for multi ummu
+ * @UMMU_CNT: ummu count
+ * @UMMU_TID_RES: tid resource
+ */
 enum ummu_resource_type {
 	UMMU_BLOCK,
 	UMMU_QUEUE,
@@ -51,6 +77,22 @@ enum default_tid_ops_types {
 	TID_OPS_MAX,
 };
 
+enum ummu_device_config_type {
+	UMMU_MPAM,
+};
+
+enum ummu_device_config_command {
+	UMMU_COMMAND_SET,
+	UMMU_COMMAND_GET,
+};
+
+/**
+ * enum ummu_register_type - ummu device register type
+ *
+ * @REGISTER_TYPE_GLOBAL: register as the global iommu device
+ * @REGISTER_TYPE_NORMAL: register to the iommu framework
+ * @REGISTER_TYPE_MAX: max of ummu device register type
+ */
 enum ummu_register_type {
 	REGISTER_TYPE_GLOBAL,
 	REGISTER_TYPE_NORMAL,
@@ -62,6 +104,12 @@ struct ummu_tid_manager;
 struct ummu_base_domain;
 struct ummu_core_device;
 
+/**
+ * struct block_args - param related to mapt block
+ * @index: mapt block index
+ * @block_size_order: block size in PAGE_SIZE
+ * @out_addr: allocated physical address
+ */
 struct block_args {
 	u32 index;
 	int block_size_order;
@@ -75,6 +123,12 @@ struct block_args {
 	KABI_RESERVE(6)
 };
 
+/**
+ * struct queue_args - param related to queue
+ * @pcmdq_base: base address of command queue
+ * @pcplq_base: base address of completion queue
+ * @ctrl_page: base address of permission queue
+ */
 struct queue_args {
 	phys_addr_t pcmdq_base;
 	phys_addr_t pcplq_base;
@@ -87,6 +141,13 @@ struct queue_args {
 	KABI_RESERVE(5)
 };
 
+/**
+ * struct tid_args - param related to tid
+ * @pcmdq_order: base address of command queue
+ * @pcplq_order: base address of completion queue
+ * @blk_exp_size: block size in PAGE_SIZE
+ * @hw_cap: cap of hardware
+ */
 struct tid_args {
 	u8 pcmdq_order;
 	u8 pcplq_order;
@@ -100,6 +161,16 @@ struct tid_args {
 	KABI_RESERVE(5)
 };
 
+/**
+ * struct resource_args - SVA resource related args
+ * @type: SVA resource type
+ * @block: arg related to mapt block
+ * @queue: arg related to mapt queue for UMMU_QUEUE
+ * @queues: arg related to mapt queue for UMMU_QUEUE_LIST in multi ummu mode
+ * @tid_res: tid resource
+ * @ummu_cnt: return value number of ummu
+ * @block_index: block index for release
+ */
 struct resource_args {
 	enum ummu_resource_type type;
 	union {
@@ -117,6 +188,10 @@ struct resource_args {
 	KABI_RESERVE(3)
 };
 
+/**
+ * struct ummu_param - param related to tid
+ * @mode: mapt mode: table mode or entry mode
+ */
 struct ummu_param {
 	enum ummu_mapt_mode mode;
 
@@ -129,25 +204,64 @@ struct ummu_param {
 	KABI_RESERVE(7)
 };
 
+/**
+ * struct ummu_tid_param - param related to alloc tid
+ * @device: device pointer
+ * @mode: mapt mode: table mode or entry mode
+ * @alloc_mode: tid alloc mode
+ * @assign_tid: assigned tid, for TID_ALLOC_TRANSPARENT or TID_ALLOC_ASSIGNED
+ * @domain_type: more about domain-types in iommu.h
+ * @mm: memory descriptor for TID
+ */
 struct ummu_tid_param {
 	struct device *device;
 	enum ummu_mapt_mode mode;
 	enum tid_alloc_mode alloc_mode;
 	u32 assign_tid;
 	u32 domain_type;
+	struct mm_struct *mm;
+
+	KABI_RESERVE(1)
+	KABI_RESERVE(2)
+	KABI_RESERVE(3)
+	KABI_RESERVE(4)
+};
+
+/**
+ * struct ummu_matt_domain - SVA separated page table context
+ * @l_tid: Token ID for local access to memory
+ * @r_tid: Token ID for remote memory access, optional
+ * @mm: Address space of the process to which the mapped memory belongs
+ */
+struct ummu_matt_domain {
+	u32 l_tid;
+	u32 r_tid;
+	struct mm_struct *mm;
 
 	KABI_RESERVE(1)
 	KABI_RESERVE(2)
 	KABI_RESERVE(3)
 	KABI_RESERVE(4)
 	KABI_RESERVE(5)
+	KABI_RESERVE(6)
 };
 
+/**
+ * struct tdev_attr - attr for tdev
+ * @name: tdev name
+ * @priv: private data pointer
+ * @priv_len: private data length
+ * @dma_attr: dma mode
+ * @mode: mapt mode
+ * @usva: tdev used for usva
+ */
 struct tdev_attr {
 	const char *name;
-	enum dev_dma_attr dma_attr;
 	u8 *priv;
 	u32 priv_len;
+	enum dev_dma_attr dma_attr;
+	enum ummu_mapt_mode mode;
+	bool usva;
 
 	KABI_RESERVE(1)
 	KABI_RESERVE(2)
@@ -155,16 +269,40 @@ struct tdev_attr {
 	KABI_RESERVE(4)
 };
 
-#define UMMU_SVA_SHARE_MODE 0
-#define UMMU_SVA_SEPARATE_MODE 1
+/**
+ * struct tdev_opt - option for tdev
+ * @mm: mm of the process that creates tid
+ * @share_by_mm: indicates whether the same mm returns the same tid.
+ *               true: share tid for same mm
+ *               false: allocate new tid
+ */
+struct tdev_opt {
+	struct mm_struct *mm;
+	bool share_by_mm;
 
-enum ummu_device_config_type {
-	UMMU_MPAM,
+	KABI_RESERVE(1)
+	KABI_RESERVE(2)
+	KABI_RESERVE(3)
+	KABI_RESERVE(4)
+	KABI_RESERVE(5)
+	KABI_RESERVE(6)
 };
 
-enum ummu_device_config_command {
-	UMMU_COMMAND_SET,
-	UMMU_COMMAND_GET,
+/**
+ * struct ummu_invalid_cfg_param - param of invalid tid config
+ * @mm: mm of the process that creates tid
+ * @tid: tid to invalidate
+ */
+struct ummu_invalid_cfg_param {
+	struct mm_struct *mm;
+	u32 tid;
+
+	KABI_RESERVE(1)
+	KABI_RESERVE(2)
+	KABI_RESERVE(3)
+	KABI_RESERVE(4)
+	KABI_RESERVE(5)
+	KABI_RESERVE(6)
 };
 
 /**
@@ -207,43 +345,7 @@ struct ummu_core_ops {
 };
 
 /**
- * struct tdev_opt - option for tdev
- * @mm: mm of the process that creates tid
- * @share_by_mm: indicates whether the same mm returns the same tid.
- *               true: share tid for same mm
- *               false: allocate new tid
- */
-struct tdev_opt {
-	struct mm_struct *mm;
-	bool share_by_mm;
-
-	KABI_RESERVE(1)
-	KABI_RESERVE(2)
-	KABI_RESERVE(3)
-	KABI_RESERVE(4)
-	KABI_RESERVE(5)
-	KABI_RESERVE(6)
-};
-
-/**
- * struct ummu_invalid_cfg_param - param of invalid tid config
- * @mm: mm of the process that creates tid
- * @tid: tid to invalidate
- */
-struct ummu_invalid_cfg_param {
-	struct mm_struct *mm;
-	u32 tid;
-
-	KABI_RESERVE(1)
-	KABI_RESERVE(2)
-	KABI_RESERVE(3)
-	KABI_RESERVE(4)
-	KABI_RESERVE(5)
-	KABI_RESERVE(6)
-};
-
-/**
- * ummu-core defined iommu device type
+ * struct ummu_core_device - ummu-core defined iommu device type
  * @list: used to link all ummu-core devices
  * @tid_manager: tid domain manager.
  * @iommu: iommu prototype
@@ -266,6 +368,14 @@ struct ummu_core_device {
 	KABI_RESERVE(8)
 };
 
+/**
+ * struct ummu_base_domain - domain info
+ * @domain: iommu domain
+ * @core_dev: ummu device
+ * @parent: point to father domain
+ * @list: base address of domain list
+ * @tid: token id
+ */
 struct ummu_base_domain {
 	struct iommu_domain domain;
 	struct ummu_core_device *core_dev;
@@ -278,6 +388,14 @@ struct ummu_base_domain {
 	KABI_RESERVE(3)
 	KABI_RESERVE(4)
 };
+
+/**
+ * struct tid_ops - ummu ops for normal use, expand from iommu_ops
+ * @alloc_tid_manager: alloc manager for tid
+ * @free_tid_manager: free all tid and manager for tid
+ * @alloc_tid: alloc tid func
+ * @free_tid: free tid func
+ */
 struct tid_ops {
 	struct ummu_tid_manager *(*alloc_tid_manager)(
 		struct ummu_core_device *core_device, u32 min_tid,
@@ -293,6 +411,13 @@ struct tid_ops {
 	KABI_RESERVE(4)
 };
 
+/**
+ * struct ummu_tid_manager - assigned tid manager
+ * @ops: ummu tid ops for normal use, expand from iommu_ops
+ * @token_ids: xarray of assigned tid
+ * @min_tid: min tid range for alloc
+ * @max_tid: max tid range for alloc
+ */
 struct ummu_tid_manager {
 	const struct tid_ops *ops;
 	struct xarray token_ids;
@@ -306,6 +431,12 @@ struct ummu_tid_manager {
 	KABI_RESERVE(4)
 };
 
+/**
+ * struct ummu_core_tid_args - tid related args
+ * @tid_ops: ummu tid ops for normal use, expand from iommu_ops
+ * @max_tid: max tid range for alloc
+ * @min_tid: min tid range for alloc
+ */
 struct ummu_core_tid_args {
 	const struct tid_ops *tid_ops;
 	u32 max_tid;
@@ -319,6 +450,13 @@ struct ummu_core_tid_args {
 	KABI_RESERVE(6)
 };
 
+/**
+ * struct ummu_core_init_args - ummu core init args
+ * @core_ops: the ummu device need ummu core ops capability
+ * @tid_args: parameters related to tid
+ * @iommu_ops: iommu_ops is mandatory
+ * @hwdev: related hwdev
+ */
 struct ummu_core_init_args {
 	const struct ummu_core_ops *core_ops;
 	struct ummu_core_tid_args tid_args;
@@ -330,26 +468,36 @@ struct ummu_core_init_args {
 	KABI_RESERVE(3)
 };
 
-/* Memory traffic monitoring of the UB device */
+/**
+ * struct ummu_mpam - Memory traffic monitoring of the UB device
+ * @eid:		entity id
+ * @tid:		tid; when set to UMMU_INVALID_TID, the I/O of the device
+ *			identified by eid is tagged with MPAM.
+ *			When tid is valid, the I/O of the device identified
+ *			by tid is tagged with MPAM.
+ * @partid:		mpam partition id
+ * @pmg:		mpam pmg
+ */
 struct ummu_mpam {
-#define UMMU_DEV_SET_MPAM	(1 << 0)
-#define UMMU_DEV_GET_MPAM	(1 << 1)
-#define UMMU_DEV_SET_USER_MPAM_EN	(1 << 2)
-#define UMMU_DEV_GET_USER_MPAM_EN	(1 << 3)
-	int flags;
 	eid_t eid;
 	int tid;
 	int partid;
 	int pmg;
-	int s1mpam;
-	int user_mpam_en;
 
 	KABI_RESERVE(1)
 	KABI_RESERVE(2)
+	KABI_RESERVE(3)
+	KABI_RESERVE(4)
 };
 
+/**
+ * ummu_core_tid_ops - Obtaining the TID Allocation Policy Interface.
+ * @Deprecated: use ummu_core_get_tid_ops instead.
+ */
 #if IS_ENABLED(CONFIG_UB_UMMU_CORE_DRIVER)
 extern const struct tid_ops *ummu_core_tid_ops[TID_OPS_MAX];
+#else
+static __maybe_unused const struct tid_ops *ummu_core_tid_ops[TID_OPS_MAX] = { NULL };
 #endif /* CONFIG_UB_UMMU_CORE_DRIVER */
 
 static inline struct ummu_core_device *to_ummu_core(struct iommu_device *iommu)
@@ -376,7 +524,7 @@ static inline void tdev_attr_init(struct tdev_attr *attr)
 #ifdef CONFIG_UB_UMMU_CORE
 /* EID API */
 /**
- * Add a new EID to the UMMU.
+ * ummu_core_add_eid() - Add a new EID to the UMMU.
  * @guid: entity/device identity.
  * @eid: entity id to be added.
  * @type: eid type.
@@ -385,7 +533,7 @@ static inline void tdev_attr_init(struct tdev_attr *attr)
  */
 int ummu_core_add_eid(guid_t *guid, eid_t eid, enum eid_type type);
 /**
- * Delete an EID from the UMMU.
+ * ummu_core_del_eid() - Delete an EID from the UMMU.
  * @guid: entity/device identity.
  * @eid: entity id to be deleted.
  * @type: eid type.
@@ -394,7 +542,7 @@ void ummu_core_del_eid(guid_t *guid, eid_t eid, enum eid_type type);
 
 /* UMMU IOVA API */
 /**
- * Allocate a range of IOVA. The input iova size might be aligned.
+ * dma_alloc_iova() - Allocate a range of IOVA. The input iova size might be aligned.
  * @dev: related device.
  * @size: iova size.
  * @attrs: dma attributes.
@@ -408,15 +556,16 @@ struct iova_slot *dma_alloc_iova(struct device *dev, size_t size,
 				 size_t *sizep);
 
 /**
- * Free a range of IOVA.
+ * dma_free_iova() - Free a range of IOVA.
  * The API is not thread-safe.
  * @slot: iova slot, generated from dma_alloc_iova.
  */
 void dma_free_iova(struct iova_slot *slot);
 
 /**
- * Fill a range of IOVA. It allocates pages and maps pages to the iova.
+ * ummu_fill_pages() - Fill a range of IOVA. It allocates pages and maps pages to the iova.
  * The API is not thread-safe.
+ * Deprecated: Use ummu_core_fill_pages() instead.
  * @slot: iova slot, generated from dma_alloc_iova.
  * @iova: iova start.
  * @nr_pages: fill pages count.
@@ -426,9 +575,9 @@ void dma_free_iova(struct iova_slot *slot);
 int ummu_fill_pages(struct iova_slot *slot, dma_addr_t iova, unsigned long nr_pages);
 
 /**
- * Drain a range of IOVA. It unmaps iova and releases pages.
+ * ummu_drain_pages() - Drain a range of IOVA. It unmaps iova and releases pages.
  * The API is not thread-safe.
- * Deprecated: Use ummu_core_fill_pages() instead.
+ * Deprecated: Use ummu_core_drain_pages() instead.
  * @slot: iova slot, generated from dma_alloc_iova.
  * @iova: iova start.
  * @nr_pages: drain pages count.
@@ -462,16 +611,14 @@ int ummu_core_fill_pages(struct iova_slot *slot, dma_addr_t iova,
 int ummu_core_drain_pages(struct iova_slot *slot, dma_addr_t iova, unsigned long nr_pages);
 
 /**
- * ummu_core_tlb_inv_walk() - Synchronously invalidate all intermediate TLB state
- * (sometimes referred to as the "walk cache") for a virtual address range.
- * @domain: iommu domain
- * @iova: IOVA representing the start of the range to be flushed
- * @size: IOVA representing the end of the range to be flushed (inclusive)
- * @granule: The interval at which to perform the flush
+ * ummu_core_get_domain_by_tid() - Get iommu_domain by tid and dev.
+ * @dev: related device.
+ * @tid: tid
+ *
+ * Return: iommu_domain or NULL if failed.
  */
-void ummu_core_tlb_inv_walk(struct iommu_domain *domain, unsigned long iova,
-			    size_t size, size_t granule);
-
+struct iommu_domain *ummu_core_get_domain_by_tid(struct device *dev,
+						 u32 tid);
 #else
 static inline int ummu_core_add_eid(guid_t *guid, eid_t eid, enum eid_type type)
 {
@@ -517,9 +664,10 @@ static inline int ummu_core_drain_pages(struct iova_slot *slot, dma_addr_t iova,
 	return -EOPNOTSUPP;
 }
 
-static inline void ummu_core_tlb_inv_walk(struct iommu_domain *domain, unsigned long iova,
-					  size_t size, size_t granule)
+static inline struct iommu_domain *
+ummu_core_get_domain_by_tid(struct device *dev, u32 tid)
 {
+	return NULL;
 }
 
 #endif /* CONFIG_UB_UMMU_CORE */
@@ -527,12 +675,16 @@ static inline void ummu_core_tlb_inv_walk(struct iommu_domain *domain, unsigned 
 #if IS_ENABLED(CONFIG_UB_UMMU_CORE_DRIVER)
 /* UMMU SVA API */
 /**
- * Grant va range permission to sva.
+ * ummu_sva_grant_range() - Grant va range permission to sva.
+ * @Deprecated: use iommu_sva_grant instead.
  * @sva: related sva handle.
  * @va: va start
  * @size: va size
  * @perm: permission
  * @cookie: struct ummu_token_info*
+ *
+ * .. code-block:: c
+ *
  *		if (!cookie) {
  *			do not use cookie check.
  *		} else if (cookie->input == 0) {
@@ -542,18 +694,21 @@ static inline void ummu_core_tlb_inv_walk(struct iommu_domain *domain, unsigned 
  *		} else {
  *			invalid para
  *		}
- *
  * Return: 0 on success, or an error.
  */
 int ummu_sva_grant_range(struct iommu_sva *sva, void *va, size_t size, int perm,
 			 void *cookie);
 
 /**
- * Ungrant va range permission from sva.
+ * ummu_sva_ungrant_range() - Ungrant va range permission from sva.
+ * @Deprecated: use iommu_sva_ungrant instead.
  * @sva: related sva handle.
  * @va: va start
  * @size: va size
  * @cookie: va related cookie,struct ummu_token_info*
+ *
+ * .. code-block:: c
+ *
  *		if (!cookie) {
  *			do not use cookie check.
  *		} else {
@@ -566,7 +721,7 @@ int ummu_sva_ungrant_range(struct iommu_sva *sva, void *va, size_t size,
 			   void *cookie);
 
 /**
- * Get tid from dev or sva.
+ * ummu_get_tid() - Get tid from dev or sva.
  * @dev: related device.
  * @sva: if sva is set, return sva mode related tid; otherwise
  *	 return the dma mode tid.
@@ -577,17 +732,8 @@ int ummu_sva_ungrant_range(struct iommu_sva *sva, void *va, size_t size,
 int ummu_get_tid(struct device *dev, struct iommu_sva *sva, u32 *tidp);
 
 /**
- * Get iommu_domain by tid and dev.
- * @dev: related device.
- * @tid: tid
- *
- * Return: iommu_domain or NULL if failed.
- */
-struct iommu_domain *ummu_core_get_domain_by_tid(struct device *dev,
-						 u32 tid);
-
-/**
- * Check whether the UMMU works in ksva mode.
+ * ummu_is_ksva() - Check whether the UMMU works in ksva mode.
+ * @Deprecated: use iommu_is_ksva_domain instead.
  * @domain: related iommu domain
  *
  * Return: true or false.
@@ -595,7 +741,8 @@ struct iommu_domain *ummu_core_get_domain_by_tid(struct device *dev,
 bool ummu_is_ksva(struct iommu_domain *domain);
 
 /**
- * Check whether the UMMU works in sva mode.
+ * ummu_is_sva() - Check whether the UMMU works in sva mode.
+ * @Deprecated: use iommu_is_ksva_domain instead.
  * @domain: related iommu domain
  *
  * Return: true or false.
@@ -605,22 +752,28 @@ bool ummu_is_sva(struct iommu_domain *domain);
 /**
  * ummu_get_sva_mode() - Get the device SVA working mode
  * @dev: device with SVA feature enabled
- * Return: 0-sva share mode; 1- sva independent mode; other- invalid mode
+ * Return: UMMU_SVA_SHARE_MODE - sva share mode
+ *	   UMMU_SVA_SEPARATE_MODE - sva separate mode
+ *	   other - invalid mode
  */
 int ummu_get_sva_mode(struct device *dev);
 
 /**
  * ummu_sva_get_features() - Get the sva feature of a peripheral.
  * @dev: the device that work on sva mode
- * Return: 32-bit value. bit0: 0- no IOPF cap; 1- with IOPF cap
+ * Return: 32-bit value. bit HW_CAP_IOPF: 0- no IOPF cap; 1- with IOPF cap
  */
 u32 ummu_sva_get_features(struct device *dev);
 
 /**
- * Bind device to a process mm.
+ * ummu_sva_bind_device() - Bind device to a process mm.
+ * @Deprecated: use iommu_sva_bind_device_isolated instead.
  * @dev: related device.
  * @mm: process memory management.
  * @drvdata: ummu_param related to tid.
+ *
+ * .. code-block:: c
+ *
  *		if (!drvdata) {
  *			sva is in the bypass mapt mode.
  *		} else {
@@ -633,7 +786,8 @@ struct iommu_sva *ummu_sva_bind_device(struct device *dev, struct mm_struct *mm,
 				       struct ummu_param *drvdata);
 
 /**
- * Bind device to kernel mm.
+ * ummu_ksva_bind_device() - Bind device to kernel mm.
+ * @Deprecated: use iommu_ksva_bind_device instead.
  * @dev: related device.
  * @drvdata: ummu_param related to tid. ksva doesn't support bypass mapt.
  *
@@ -641,63 +795,84 @@ struct iommu_sva *ummu_sva_bind_device(struct device *dev, struct mm_struct *mm,
  */
 struct iommu_sva *ummu_ksva_bind_device(struct device *dev,
 					struct ummu_param *drvdata);
+/**
+ * ummu_sva_unbind_device() - Unbind device to a process mm.
+ * @Deprecated: use iommu_sva_unbind_device_isolated instead.
+ */
 void ummu_sva_unbind_device(struct iommu_sva *handle);
+/**
+ * ummu_ksva_unbind_device() - Unbind device to kernel mm.
+ * @Deprecated: use iommu_ksva_unbind_device instead.
+ */
 void ummu_ksva_unbind_device(struct iommu_sva *handle);
 
 /* UMMU CORE API */
 /**
- * Initialiase ummu core device.
+ * ummu_core_device_init() - Initialiase ummu core device.
  * @ummu_core: ummu core device.
  * @args: ummu core init args.
+ *
  * UMMU driver should carefully choose the args based on its requirement.
  *	iommu_ops is mandatory.
  *	a. the ummu device need tid allocation capability.
+ *
  *		a.1 default tid strategies satisfy the ummu device
  *			-> set tid_ops form ummu_core_tid_ops[TID_OPS_MAX]
  *		a.2 default tid strategies do not satisfy the ummu device
  *			-> implement a new tid_ops in the driver.
+ *
  *	b. the ummu device need ummu core ops capability.
  *		-> set core_ops.
+ *
  *	c. the ummu device has related hwdev.
  *		-> set hwdev.
  */
 int ummu_core_device_init(struct ummu_core_device *ummu_core,
 			  struct ummu_core_init_args *args);
 /**
- * Deinitialiase ummu core device.
+ * ummu_core_device_deinit() - Deinitialiase ummu core device.
  * @ummu_core: ummu core device.
  */
 void ummu_core_device_deinit(struct ummu_core_device *ummu_core);
 
 /**
- * Register ummu core device to the ummu framework.
+ * ummu_core_device_register() - Register ummu core device to the ummu framework.
  * @ummu_core: ummu core device.
  * @type: register type.
-	REGISTER_TYPE_GLOBAL: register the ummu device as the global device,
-		The ummu device will be the device handle all request.
-		e.g. 1. add_eid/del_eid 2. provide ubus iommu ops. etc.
-
-	REGISTER_TYPE_NORMAL: follow the iommu_device register. will not be
-		related to the global device. it work as a normal iommu device.
+ *
+ *	REGISTER_TYPE_GLOBAL: register the ummu device as the global device,
+ *		The ummu device will be the device handle all request.
+ *		e.g. 1. add_eid/del_eid 2. provide ubus iommu ops. etc.
+ *
+ *	REGISTER_TYPE_NORMAL: follow the iommu_device register. will not be
+ *		related to the global device. it work as a normal iommu device.
  */
 int ummu_core_device_register(struct ummu_core_device *ummu_core,
 			      enum ummu_register_type type);
 /**
- * Unregister ummu core device from the ummu framework.
+ * ummu_core_device_unregister() - Unregister ummu core device from the ummu framework.
  * @dev: the ummu_core device tid belongs to.
  */
 void ummu_core_device_unregister(struct ummu_core_device *dev);
 
 /**
- * Invalidate ummu global configuration by tid.
+ * ummu_core_invalidate_cfg_table() - Invalidate ummu global configuration by tid.
+ * @Deprecated: use ummu_core_invalidate_cfg instead.
  * @tid: tid
  * Return: 0 on success, or an error.
  */
 int ummu_core_invalidate_cfg_table(u32 tid);
 
+/**
+ * ummu_core_invalidate_cfg() - Invalidate ummu global configuration by param.
+ * @param: tid index parameter to invalidate.
+ * Return: 0 on success, or an error.
+ */
+int ummu_core_invalidate_cfg(struct ummu_invalid_cfg_param *param);
+
 /* UMMU TID API */
 /**
- * Alloc a tid from ummu framework, and alloc related pasid.
+ * ummu_core_alloc_tid() - Alloc a tid from ummu framework, and alloc related pasid.
  * @dev: the allocated tid will be attached to.
  * @drvdata: ummu_tid_param related to tid
  * @tidp: the allocated tid returned here.
@@ -708,14 +883,14 @@ int ummu_core_alloc_tid(struct ummu_core_device *dev,
 			struct ummu_tid_param *drvdata, u32 *tidp);
 
 /**
- * Free a tid to ummu framework.
+ * ummu_core_free_tid() - Free a tid to ummu framework.
  * @dev: the ummu_core device tid belongs to.
  * @tid: token id.
  */
 void ummu_core_free_tid(struct ummu_core_device *dev, u32 tid);
 
 /**
- * Get mapt_mode related to the tid.
+ * ummu_core_get_mapt_mode() - Get mapt_mode related to the tid.
  * @dev: the ummu_core device tid belongs to.
  * @tid: token id.
  *
@@ -725,7 +900,7 @@ enum ummu_mapt_mode ummu_core_get_mapt_mode(struct ummu_core_device *dev,
 					    u32 tid);
 
 /**
- * Get device related to the tid.
+ * ummu_core_get_device() - Get device related to the tid.
  * It will increase the ref count of the device.
  * @dev: the ummu_core device tid belongs to.
  * @tid: token id.
@@ -736,20 +911,12 @@ struct device *ummu_core_get_device(struct ummu_core_device *dev, u32 tid);
 void ummu_core_put_device(struct device *dev);
 
 /**
- *  Allocate a virtual device to hold a tid.
+ * ummu_core_alloc_tdev() - Allocate a virtual device to hold a tid.
  * @attr: attributes of tdev
  * @ptid: tid pointer
  * Return: device on success or NULL error.
  */
 struct device *ummu_core_alloc_tdev(struct tdev_attr *attr, u32 *ptid);
-
-/**
- * Free the virtual device
- * @dev: Return value allocated by ummu_core_alloc_tdev
- *
- * Return: 0 on success or an error.
- */
-int ummu_core_free_tdev(struct device *dev);
 
 /**
  * ummu_alloc_tdev_separated() - Allocate a virtual device for sva separated mode.
@@ -760,7 +927,15 @@ int ummu_core_free_tdev(struct device *dev);
 struct device *ummu_alloc_tdev_separated(u32 *ptid);
 
 /**
- * Get ummu_tid_type related to the tid.
+ * ummu_core_free_tdev() - Free the virtual device
+ * @dev: Return value allocated by ummu_core_alloc_tdev
+ *
+ * Return: 0 on success or an error.
+ */
+int ummu_core_free_tdev(struct device *dev);
+
+/**
+ * ummu_core_get_tid_type() - Get ummu_tid_type related to the tid.
  * @dev: the ummu_core device tid belongs to.
  * @tid: token id.
  * @tid_type: out param, ummu_tid_type
@@ -781,6 +956,25 @@ int ummu_core_get_tid_type(struct ummu_core_device *dev, u32 tid,
  */
 int ummu_core_dev_config(struct device *dev, int type, int command, void *data);
 
+/**
+ * ummu_core_tlb_inv_walk() - Synchronously invalidate all intermediate TLB state
+ * (sometimes referred to as the "walk cache") for a virtual address range.
+ * @domain: iommu domain
+ * @iova: IOVA representing the start of the range to be flushed
+ * @size: IOVA representing the end of the range to be flushed (inclusive)
+ * @granule: The interval at which to perform the flush
+ */
+void ummu_core_tlb_inv_walk(struct iommu_domain *domain, unsigned long iova,
+			    size_t size, size_t granule);
+
+/**
+ * ummu_core_get_tid_ops() - Obtaining the TID Allocation Policy Interface.
+ * The API is not thread-safe.
+ * @default_tid_ops_types: tid policy type
+ *
+ * Return: Policy Interface on success, or an error NULL pointer.
+ */
+const struct tid_ops *ummu_core_get_tid_ops(enum default_tid_ops_types type);
 #else
 static inline int ummu_sva_grant_range(struct iommu_sva *sva, void *va,
 				       size_t size, int perm, void *cookie)
@@ -798,12 +992,6 @@ static inline int ummu_get_tid(struct device *dev, struct iommu_sva *sva,
 			       u32 *tidp)
 {
 	return -EOPNOTSUPP;
-}
-
-static inline struct iommu_domain *
-ummu_core_get_domain_by_tid(struct device *dev, u32 tid)
-{
-	return NULL;
 }
 
 static inline bool ummu_is_ksva(struct iommu_domain *domain)
@@ -924,6 +1112,17 @@ static inline int ummu_core_get_tid_type(struct ummu_core_device *dev, u32 tid,
 static inline int ummu_core_dev_config(struct device *dev, int type, int command, void *data)
 {
 	return -EOPNOTSUPP;
+}
+
+static inline void ummu_core_tlb_inv_walk(struct iommu_domain *domain, unsigned long iova,
+					  size_t size, size_t granule)
+{
+}
+
+static inline
+const struct tid_ops *ummu_core_get_tid_ops(enum default_tid_ops_types type)
+{
+	return NULL;
 }
 
 #endif /* CONFIG_UB_UMMU_CORE_DRIVER */
