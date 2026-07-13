@@ -22,8 +22,10 @@
 #include <linux/mutex.h>
 #include <ub/urma/ubcore_api.h>
 #include <ub/urma/ubcore_uapi.h>
+#include <uapi/ub/sentry/smh_common_type.h>
 
-#include "smh_common_type.h"
+#include "sentry_remote_reporter.h"
+#include "sentry_report_comm.h"
 
 static int heartbeat_thread(void *arg);
 static int rebuild_tjetty(int idx, int die_index);
@@ -240,11 +242,6 @@ static int unimport_tjetty(int die_index)
 		if (sentry_urma_dev[die_index].tjetty[i]) {
 			ubcore_unimport_jetty(sentry_urma_dev[die_index].tjetty[i]);
 			sentry_urma_dev[die_index].tjetty[i] = NULL;
-		}
-		if (sentry_urma_dev[die_index].tpid[i]) {
-			ubcore_delete_tpid(sentry_urma_dev[die_index].sentry_ubcore_dev,
-				sentry_urma_dev[die_index].tpid[i]);
-			sentry_urma_dev[die_index].tpid[i] = NULL;
 		}
 		if (sentry_urma_dev[die_index].tpid[i]) {
 			ubcore_delete_tpid(sentry_urma_dev[die_index].sentry_ubcore_dev,
@@ -1678,7 +1675,6 @@ static int heartbeat_thread(void *arg)
 {
 	int i, cnt;
 	int die_index;
-	union ubcore_eid remote_eid;
 
 	struct sentry_binary_msg heartbeat_msg = {0};
 
