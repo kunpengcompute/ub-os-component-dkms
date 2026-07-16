@@ -3,8 +3,8 @@
 # Makefile for the HISILICON network device drivers.
 #
 
-ccflags-y += -I$(srctree)/$(src)
-ccflags-y += -I$(srctree)/drivers/net/ub/unic/debugfs
+ccflags-y += -I$(MOD_SRC_TREE)/drivers/net/ub/unic
+ccflags-y += -I$(MOD_SRC_TREE)/drivers/net/ub/unic/debugfs
 
 obj-$(CONFIG_UB_UNIC) += unic.o
 unic-objs = unic_main.o unic_ethtool.o unic_hw.o unic_guid.o unic_netdev.o unic_dev.o unic_qos_hw.o unic_event.o unic_crq.o

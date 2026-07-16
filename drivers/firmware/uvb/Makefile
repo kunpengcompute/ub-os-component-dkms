@@ -2,9 +2,8 @@
 # Create      : 2025-04-18
 # Description : cis odf Makefile
 
-ccflags-y += -I$(srctree)/drivers/firmware/uvb/include
+ccflags-y += -I$(MOD_SRC_TREE)/drivers/firmware/uvb/include
 
-obj-$(CONFIG_UDFI) = odf/odf_get_fdt.o
 obj-$(CONFIG_UDFI_ODF) += odf.o
 odf-objs := odf/odf_trans.o \
 	odf/odf_data.o \

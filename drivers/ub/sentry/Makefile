@@ -2,6 +2,8 @@
 #
 # Makefile for the sentry drivers.
 
+ccflags-y += -I$(MOD_SRC_TREE)/include/uapi
+
 obj-$(CONFIG_UB_SENTRY) += sentry_msg_helper.o
 obj-$(CONFIG_UB_SENTRY) += sentry_reporter.o
 obj-$(CONFIG_UB_SENTRY_REMOTE) += sentry_remote_reporter.o
