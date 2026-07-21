@@ -1,4 +1,5 @@
-KERNEL_PATH ?= /lib/modules/$(shell uname -r)/build
+kernelver ?= $(shell uname -r)
+KERNEL_PATH ?= /lib/modules/$(kernelver)/build
 EXTRA_CFLAGS += -I$(PWD)/include
 MOD_SRC_TREE := $(PWD)
 
