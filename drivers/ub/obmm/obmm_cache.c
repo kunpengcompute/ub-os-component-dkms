@@ -192,7 +192,11 @@ static int modify_hugetlb_prot(pte_t *pte, unsigned long hmask __always_unused,
 	prot = cacheable ? pgprot_tagged(pte_pgprot(entry)) :
 			   pgprot_writecombine(pte_pgprot(entry));
 	entry = pte_modify(entry, prot);
-	__set_pte(pte, entry);
+#if defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+	set_pte(pte, entry);
+#else
+    __set_pte(pte, entry);
+#endif
 
 	spin_unlock(ptl);
 	return 0;

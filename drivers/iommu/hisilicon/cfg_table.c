@@ -5,6 +5,7 @@
  */
 #define pr_fmt(fmt) "UMMU: " fmt
 
+#include <linux/version.h>
 #include <linux/xarray.h>
 #include <linux/ummu_core.h>
 #include <linux/cleanup.h>
@@ -458,8 +459,10 @@ static void ummu_tecte_pre_init(struct ummu_tecte_data *tect, u32 num_ents)
 		ummu_build_tecte_abort(tect);
 
 		tect->data[0] |= cpu_to_le64(TECT_ENT0_MAPT_EN);
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 		tect->data[1] |= cpu_to_le64(TECT_ENT1_TCT_MTM_EN);
 		tect->data[6] |= cpu_to_le64(TECT_ENT6_MTM_NS);
+#endif
 		tect++;
 	}
 }

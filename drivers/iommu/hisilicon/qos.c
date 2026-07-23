@@ -4,6 +4,8 @@
  * Description: ummu mpam internal interface.
  */
 
+#include <linux/version.h>
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 #define pr_fmt(fmt) "UMMU: " fmt
 
 #include <linux/iopoll.h>
@@ -560,3 +562,4 @@ int ummu_device_dev_config(struct device *dev, int type, int command, void *data
 		return -EINVAL;
 	}
 }
+#endif

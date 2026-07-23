@@ -4,6 +4,7 @@
  * Description：OBMM Framework's implementations.
  */
 
+#include <asm/pgtable-prot.h>
 #include <asm/tlbflush.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
@@ -581,7 +582,11 @@ static int update_pmd_entry(pmd_t *pmd, unsigned long addr,
 		if (pmd_leaf(old_pmd)) {
 			new_pmd = pfn_pmd(pmd_pfn(old_pmd), newprot);
 			new_pmd = pmd_mkspecial(pmd_mkhuge(new_pmd));
-			__set_pte((pte_t *)pmd, pmd_pte(new_pmd));
+#if defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+			set_pmd(pmd, new_pmd);
+#else
+            __set_pte((pte_t *)pmd, pmd_pte(new_pmd));
+#endif
 		}
 		spin_unlock(ptl);
 		/* Skip PTE-level walk and split_huge_pmd for PFN-mapped huge pages */
@@ -608,7 +613,11 @@ static int update_pte_entry(pte_t *pte, unsigned long addr __always_unused,
 	if (pte_special(old_pte))
 		new_pte = pte_mkspecial(new_pte);
 
-	__set_pte(pte, new_pte);
+#if defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+	set_pte(pte, new_pte);
+#else
+    __set_pte(pte, new_pte);
+#endif
 	return 0;
 }
 

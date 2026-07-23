@@ -6,6 +6,7 @@
 
 #define pr_fmt(fmt) "UMMU: " fmt
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/iopoll.h>
@@ -27,7 +28,9 @@
 #include "cfg_table.h"
 #include "iommu.h"
 #include "sva.h"
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 #include "qos.h"
+#endif
 
 #define UMMU_DRV_NAME "ummu"
 #define HISI_VENDOR_ID 0xCC08
@@ -842,7 +845,9 @@ static void __exit ummu_driver_unregister(struct platform_driver *drv)
 {
 	mmu_notifier_synchronize();
 	platform_driver_unregister(drv);
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 	ummu_release_partid_map();
+#endif
 	ummu_free_global_meta();
 	if (!hw_bypass)
 		ummu_global_identity_pgtbl_free();
