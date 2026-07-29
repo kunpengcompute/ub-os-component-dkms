@@ -8,6 +8,7 @@
 
 #include <linux/types.h>
 #include <linux/kfifo.h>
+#include <linux/kabi.h>
 #include <ub/ubus/ubus.h>
 #include <ub/ubus/ub-mem-decoder.h>
 

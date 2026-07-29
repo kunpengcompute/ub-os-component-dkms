@@ -5,6 +5,7 @@
 #ifndef __UBUS_H__
 #define __UBUS_H__
 
+#include <linux/kabi.h>
 #include <ub/ubfi/ubfi.h>
 #include <ub/ubus/ubus.h>
 

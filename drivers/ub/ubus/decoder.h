@@ -6,6 +6,7 @@
 #ifndef __DECODER_H__
 #define __DECODER_H__
 
+#include <linux/kabi.h>
 #include <ub/ubus/ubus.h>
 
 enum ub_cmd_op_type {

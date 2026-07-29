@@ -211,7 +211,7 @@ static const struct bin_attribute ub_config_bin_attr = {
 		.name = "config",
 		.mode = 0644,
 	},
-	.size = UB_CFG_SAPCE_SLICE_END,
+	.size = UB_CFG_SPACE_SLICE_END,
 	.read = ub_read_config,
 	.write = ub_write_config,
 };

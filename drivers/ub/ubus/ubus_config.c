@@ -69,7 +69,7 @@ static bool pos_size_valid(u64 pos, u8 size)
 	struct ub_cfg *cfg;
 	u8 i;
 
-	if (pos >= UB_CFG_SAPCE_SLICE_END)
+	if (pos >= UB_CFG_SPACE_SLICE_END)
 		return false;
 
 	for (i = 0; i < UB_CFG_PARAM_CNT; i++) {
