@@ -1,5 +1,6 @@
 kernelver ?= $(shell uname -r)
 KERNEL_PATH ?= /lib/modules/$(kernelver)/build
+EXTRA_CFLAGS += ${VENDOR_CFLAGS}
 EXTRA_CFLAGS += -I$(PWD)/include
 MOD_SRC_TREE := $(PWD)
 
