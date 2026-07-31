@@ -5,6 +5,7 @@
  */
 
 #define pr_fmt(fmt) "[UMMU_CORE]: " fmt
+#include <linux/version.h>
 #include <linux/module.h>
 #include <ub/ubus/ubus.h>
 
@@ -275,6 +276,7 @@ out_unlock:
 	return ret;
 }
 
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 int ummu_core_dev_config(struct device *dev, int type, int command, void *data)
 {
 	if (!data)
@@ -290,6 +292,7 @@ int ummu_core_dev_config(struct device *dev, int type, int command, void *data)
 	return global_core_device->ops->dev_config(dev, type, command, data);
 }
 EXPORT_SYMBOL_GPL(ummu_core_dev_config);
+#endif
 
 int ummu_get_sva_mode(struct device *dev)
 {

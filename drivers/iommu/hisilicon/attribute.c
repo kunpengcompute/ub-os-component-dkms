@@ -4,6 +4,7 @@
  */
 #define pr_fmt(fmt) "UMMU: " fmt
 
+#include <linux/version.h>
 #include <linux/device.h>
 #include <linux/errno.h>
 #include <linux/iommu.h>
@@ -11,13 +12,17 @@
 
 #include "ummu.h"
 #include "cfg_table.h"
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 #include "qos.h"
+#endif
 #include "attribute.h"
 
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 #define NUMBER_BASE_DECIMAL 10
 
 static int g_partid[UMMU_MPAM_TYPE_NUM] = { 0 };
 static int g_pmg[UMMU_MPAM_TYPE_NUM] = { 0 };
+#endif
 
 #define ATTR_SHOW(dev, capability, buf, ret)                                          \
 	do {                                                                          \
@@ -210,6 +215,7 @@ static struct attribute_group ummu_iommu_group = {
 	.attrs = ummu_iommu_attrs,
 };
 
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 static int check_input_buf(const char *buf)
 {
 	int var, ret;
@@ -412,10 +418,13 @@ static struct attribute_group ummu_uotr_mpam_group = {
 	.name = "ummu_uotr_mpam",
 	.attrs = ummu_uotr_mpam_attrs,
 };
+#endif
 
 static const struct attribute_group *ummu_iommu_groups[] = {
 	&ummu_iommu_group,
-	/*
+	
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+    /*
 	 * bypass_mpam: Memory traffic monitoring
 	 * of the UB device when ummu is bypassed.
 	 */
@@ -426,6 +435,7 @@ static const struct attribute_group *ummu_iommu_groups[] = {
 	 * relating to the Non-secure programming interface.
 	 */
 	&ummu_uotr_mpam_group,
+#endif
 	NULL,
 };
 
