@@ -16,8 +16,10 @@
 #define __VFIO_UB_PRIVATE_H__
 
 #include <uapi/ub/ubus/ubus_regs.h>
+#include <linux/vfio.h>
 #include <linux/irqbypass.h>
 #include <ub/ubus/ubus.h>
+
 
 #define UB_CFG0_MAX_CAP 255
 #define UB_CFG1_MAX_CAP 511 /* cfg1 cap start from 256 */
