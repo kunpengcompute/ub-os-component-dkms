@@ -7,6 +7,7 @@
 #ifndef _UB_UBASE_COMM_DEBUGFS_H_
 #define _UB_UBASE_COMM_DEBUGFS_H_
 
+#include <linux/kabi.h>
 #include <linux/auxiliary_bus.h>
 
 struct ubase_dbgfs;

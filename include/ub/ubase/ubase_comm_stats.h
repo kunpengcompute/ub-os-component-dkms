@@ -7,6 +7,7 @@
 #ifndef _UB_UBASE_COMM_STATS_H_
 #define _UB_UBASE_COMM_STATS_H_
 
+#include <linux/kabi.h>
 #include <linux/auxiliary_bus.h>
 
 #define UBASE_STATS_MAX_VL_NUM	16

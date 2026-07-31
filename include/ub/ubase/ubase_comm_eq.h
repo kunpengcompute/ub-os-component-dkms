@@ -7,6 +7,7 @@
 #ifndef _UB_UBASE_COMM_EQ_H_
 #define _UB_UBASE_COMM_EQ_H_
 
+#include <linux/kabi.h>
 #include <linux/auxiliary_bus.h>
 #include <linux/notifier.h>
 

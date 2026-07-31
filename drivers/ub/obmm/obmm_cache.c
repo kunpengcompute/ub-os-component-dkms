@@ -3,6 +3,7 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
  */
 
+#include <linux/version.h>
 #include <linux/pgtable.h>
 #include <linux/mm.h>
 #include <linux/delay.h>
