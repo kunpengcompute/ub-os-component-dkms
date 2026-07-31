@@ -15,6 +15,7 @@
 
 #define pr_fmt(fmt) "vfio ub: " fmt
 
+#include <linux/version.h>
 #include <linux/device.h>
 #include <linux/interrupt.h>
 #include <linux/vfio.h>

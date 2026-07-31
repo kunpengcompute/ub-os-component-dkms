@@ -6,6 +6,7 @@
 
 #include <asm/pgtable-prot.h>
 #include <asm/tlbflush.h>
+#include <linux/version.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
