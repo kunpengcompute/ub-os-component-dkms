@@ -328,7 +328,7 @@ int ub_port_reset(struct ub_entity *dev, int port_id)
 		return -EIO;
 	}
 
-	port->link_state = LINK_STATE_RESETING;
+	port->link_state = LINK_STATE_RESETTING;
 
 	device_unlock(&dev->dev);
 

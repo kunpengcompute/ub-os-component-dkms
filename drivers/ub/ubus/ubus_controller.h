@@ -6,6 +6,7 @@
 #ifndef __UBUS_CONTROLLER_H__
 #define __UBUS_CONTROLLER_H__
 
+#include <linux/kabi.h>
 #include <ub/ubus/ubus.h>
 #include "decoder.h"
 

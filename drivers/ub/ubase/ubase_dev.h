@@ -7,6 +7,7 @@
 #ifndef __UBASE_DEV_H__
 #define __UBASE_DEV_H__
 
+#include <linux/kabi.h>
 #include <linux/align.h>
 #include <linux/atomic.h>
 #include <linux/auxiliary_bus.h>

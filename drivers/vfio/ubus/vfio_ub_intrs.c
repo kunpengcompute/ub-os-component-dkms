@@ -15,6 +15,7 @@
 
 #define pr_fmt(fmt) "vfio ub: " fmt
 
+#include <linux/version.h>
 #include <linux/device.h>
 #include <linux/interrupt.h>
 #include <linux/vfio.h>
@@ -115,13 +116,23 @@ static int vfio_ub_intr_set_vector_signal(struct vfio_ub_core_device *vdev,
 	if (ret)
 		goto err_irq;
 
+	/* API changed: newer kernels require irq and eventfd parameters */
+#if defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 	vdev->ctx[vector].producer.irq = irq_vec;
+	vdev->ctx[vector].producer.eventfd = trigger;
+	ret = irq_bypass_register_producer(&vdev->ctx[vector].producer, trigger, irq_vec);
+#else
 	vdev->ctx[vector].producer.token = trigger;
 	ret = irq_bypass_register_producer(&vdev->ctx[vector].producer);
+#endif
 	if (unlikely(ret)) {
 		ub_info(uent,
 			"irq bypass producer registration failed, ret=%d\n", ret);
+#if defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+		vdev->ctx[vector].producer.eventfd = NULL;
+#else
 		vdev->ctx[vector].producer.token = NULL;
+#endif
 	}
 	vdev->ctx[vector].trigger = trigger;
 

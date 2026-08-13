@@ -6,6 +6,7 @@
 #ifndef __MSG_H__
 #define __MSG_H__
 
+#include <linux/kabi.h>
 #include "ubus.h"
 
 extern bool msg_retry;

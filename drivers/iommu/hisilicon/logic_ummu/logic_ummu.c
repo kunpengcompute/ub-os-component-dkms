@@ -5,6 +5,7 @@
  */
 #define pr_fmt(fmt) "[logic ummu]: " fmt
 
+#include <linux/version.h>
 #include <linux/kvm_host.h>
 #include <uapi/linux/iommufd.h>
 #include <linux/device.h>
@@ -1406,6 +1407,7 @@ static void logic_ummu_remove_dev_pasid(struct device *dev, ioasid_t pasid,
 }
 #endif
 
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 static int logic_ummu_set_group_qos_params(struct iommu_group *group, u16 partid, u8 pmg)
 {
 	const struct ummu_core_ops *core_ops = get_agent_core_ops();
@@ -1449,6 +1451,7 @@ static int logic_ummu_get_group_qos_params(struct iommu_group *group, u16 *parti
 	}
 	return ops->get_group_qos_params(group, partid, pmg);
 }
+#endif
 
 static struct iommu_ops logic_iommu_ops = {
 	.pgsize_bitmap = SZ_4K,
@@ -1787,6 +1790,7 @@ static int logic_ummu_get_hw_cap(struct device *dev, u32 *hw_cap)
 	return core_ops->get_hw_cap(dev, hw_cap);
 }
 
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 static int logic_ummu_dev_config(struct device *dev, int type, int command, void *data)
 {
 	const struct ummu_core_ops *core_ops = get_agent_core_ops();
@@ -1822,6 +1826,7 @@ static int logic_ummu_dev_config(struct device *dev, int type, int command, void
 
 	return 0;
 }
+#endif
 
 static void logic_ummu_tlb_inv_walk(struct iommu_domain *domain, unsigned long iova,
 				    size_t size, size_t pgsize)
@@ -1850,7 +1855,9 @@ static struct ummu_core_ops logic_ummu_core_ops = {
 	.invalidate_cfg = logic_ummu_invalidate_cfg,
 	.tdev_support_attr = logic_ummu_device_support_attr,
 	.get_hw_cap = logic_ummu_get_hw_cap,
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 	.dev_config = logic_ummu_dev_config,
+#endif
 	.tlb_inv_walk = logic_ummu_tlb_inv_walk,
 };
 
@@ -1877,8 +1884,10 @@ static void gen_iommu_ops(const struct iommu_ops *src, struct iommu_ops *dst)
 #if IS_ENABLED(CONFIG_UB_UMMU_SVA)
 	__GEN_OPS(remove_dev_pasid, src, dst);
 #endif
-	__GEN_OPS(set_group_qos_params, src, dst);
-	__GEN_OPS(get_group_qos_params, src, dst);
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+    __GEN_OPS(set_group_qos_params, src, dst);
+ 	__GEN_OPS(get_group_qos_params, src, dst);
+#endif
 	__GEN_OPS(viommu_alloc, src, dst);
 }
 

@@ -149,7 +149,7 @@ static int ublc_handle_new_device_link_up(struct ub_port *port, int src)
 
 	if (list_empty(&dev_list)) {
 		ub_warn(port->uent, "link up without remote dev\n");
-		if (port->link_state == LINK_STATE_RESETING)
+		if (port->link_state == LINK_STATE_RESETTING)
 			port->link_state = LINK_STATE_DONE;
 		return -ENXIO;
 	}
@@ -175,7 +175,7 @@ static int ublc_handle_new_device_link_up(struct ub_port *port, int src)
 		goto err_link_up;
 	}
 
-	if (port->link_state == LINK_STATE_RESETING)
+	if (port->link_state == LINK_STATE_RESETTING)
 		port->link_state = LINK_STATE_DONE;
 
 	return 0;
@@ -276,10 +276,10 @@ static bool ublc_device_is_down(struct ub_port *port)
 
 static void port_link_state_change(struct ub_port *port, struct ub_port *r_port)
 {
-	if (port->link_state == LINK_STATE_RESETING)
+	if (port->link_state == LINK_STATE_RESETTING)
 		port->link_state = LINK_STATE_DONE;
 
-	if (r_port->link_state == LINK_STATE_RESETING)
+	if (r_port->link_state == LINK_STATE_RESETTING)
 		r_port->link_state = LINK_STATE_DONE;
 }
 

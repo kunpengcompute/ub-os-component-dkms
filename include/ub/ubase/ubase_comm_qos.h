@@ -7,6 +7,7 @@
 #ifndef _UB_UBASE_COMM_QOS_H_
 #define _UB_UBASE_COMM_QOS_H_
 
+#include <linux/kabi.h>
 #include <linux/dcbnl.h>
 #include <ub/ubase/ubase_comm_dev.h>
 

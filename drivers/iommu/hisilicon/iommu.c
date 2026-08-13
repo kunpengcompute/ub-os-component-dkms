@@ -6,6 +6,7 @@
 
 #define pr_fmt(fmt) "UMMU: " fmt
 
+#include <linux/version.h>
 #include <linux/kvm_host.h>
 #include <linux/iommu.h>
 #include <uapi/linux/iommufd.h>
@@ -24,7 +25,9 @@
 #include "page_table.h"
 #include "cfg_table.h"
 #include "perm_table.h"
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 #include "qos.h"
+#endif
 #include "queue.h"
 #include "regs.h"
 #include "sva.h"
@@ -629,8 +632,10 @@ struct iommu_ops ummu_iommu_ops = {
 	.page_response = ummu_page_response,
 	.def_domain_type = ummu_def_domain_type,
 	.remove_dev_pasid = ummu_remove_dev_pasid,
-	.get_group_qos_params = ummu_group_get_mpam,
-	.set_group_qos_params = ummu_group_set_mpam,
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+    .get_group_qos_params = ummu_group_get_mpam, 
+ 	.set_group_qos_params = ummu_group_set_mpam,
+#endif
 	.viommu_alloc = ummu_viommu_alloc,
 	.default_domain_ops = &default_domain_ops,
 	.pgsize_bitmap = -1UL,
@@ -834,7 +839,9 @@ const struct ummu_core_ops ummu_ops = {
 	.del_eid = ummu_del_eid,
 	.invalidate_cfg = ummu_invalidate_cfg,
 	.get_hw_cap = ummu_device_get_hw_cap,
+#if !defined(OS_VENDOR_V1) && (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
 	.dev_config = ummu_device_dev_config,
+#endif
 };
 
 const struct ummu_device_helper ummu_helper = {
