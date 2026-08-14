@@ -4,6 +4,7 @@
 #ifndef _UB_UMDK_URMA_UDMA_UDMA_CTL_H_
 #define _UB_UMDK_URMA_UDMA_UDMA_CTL_H_
 
+#include <linux/kabi.h>
 #include <ub/urma/ubcore_api.h>
 
 #define UDMA_BUS_INSTANCE_SEID_SIZE		4
