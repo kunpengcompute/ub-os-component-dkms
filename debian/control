@@ -1,0 +1,25 @@
+Source: ub-os-component-dkms
+Maintainer: will_niutao <niutao2@huawei.com>
+Section: kernel
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: dpkg-dev
+
+Package: ub-os-component-dkms
+Architecture: any
+Depends: dkms, linux-headers-generic, make, gcc
+Description: UB OS Component (DKMS)
+ The Out-Of-Tree kernel modules of UB OS Component
+
+Package: ub-os-component-dkms-kmod
+Architecture: any
+Depends: dkms, linux-headers-generic, make, gcc
+Description: UB OS component binary package
+ UB OS component binary kernel modules
+
+Package: ub-os-component-dkms-dev
+Architecture: any
+Depends: make, gcc
+Description: UB OS component development package
+ UB OS component development files, including header files and Module.symvers
+ for secondary development.
