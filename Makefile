@@ -46,9 +46,28 @@ MODULES_CONFIG = \
 EXTRA_CFLAGS += $(patsubst %=y,-D%=1,$(filter %=y,$(MODULES_CONFIG)))
 EXTRA_CFLAGS += $(patsubst %=m,-D%_MODULE=1,$(filter %=m,$(MODULES_CONFIG)))
 
-all:
+GEN_H := include/ub_os_component_config.h
+
+all: $(GEN_H)
 	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) MOD_SRC_TREE=$(MOD_SRC_TREE) modules $(MODULES_CONFIG) EXTRA_CFLAGS="$(EXTRA_CFLAGS)"
 
+$(GEN_H):
+	@rm -f $@
+	@echo "/* Automatically generated file; DO NOT EDIT. */" > $@
+	@echo "#ifndef UB_OS_COMPONENT_CONFIG_H" >> $@
+	@echo "#define UB_OS_COMPONENT_CONFIG_H" >> $@
+	@echo "" >> $@
+	@for opt in $(EXTRA_CFLAGS); do \
+	    case $${opt} in \
+	    -D*=1) \
+	        macro="$${opt#-D}"; \
+	        name="$${macro%%=1}"; \
+	        echo "#define $${name} 1" >> $@; \
+	    ;; \
+	    esac; \
+	done
+	@echo "" >> $@
+	@echo "#endif /* UB_OS_COMPONENT_CONFIG_H */" >> $@
 
 clean:
 	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean

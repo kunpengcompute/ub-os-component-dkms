@@ -7,4 +7,5 @@
 *.order
 *.swp
 /Module.symvers
+/include/ub_os_component_config.h
 
