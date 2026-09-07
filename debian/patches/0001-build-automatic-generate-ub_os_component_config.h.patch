@@ -1,0 +1,58 @@
+From 491e2c9fd14861875f4d346f487e20220c8743d4 Mon Sep 17 00:00:00 2001
+From: NiuTao <niutao2@huawei.com>
+Date: Fri, 4 Sep 2026 17:24:51 +0800
+Subject: [PATCH] build: automatic generate ub_os_component_config.h
+
+Signed-off-by: NiuTao <niutao2@huawei.com>
+---
+ .gitignore |  1 +
+ Makefile   | 21 ++++++++++++++++++++-
+ 2 files changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/.gitignore b/.gitignore
+index 570f4e3..a9233c7 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -7,4 +7,5 @@
+ *.order
+ *.swp
+ /Module.symvers
++/include/ub_os_component_config.h
+ 
+diff --git a/Makefile b/Makefile
+index 863fe10..2292730 100644
+--- a/Makefile
++++ b/Makefile
+@@ -46,9 +46,28 @@ MODULES_CONFIG = \
+ EXTRA_CFLAGS += $(patsubst %=y,-D%=1,$(filter %=y,$(MODULES_CONFIG)))
+ EXTRA_CFLAGS += $(patsubst %=m,-D%_MODULE=1,$(filter %=m,$(MODULES_CONFIG)))
+ 
+-all:
++GEN_H := include/ub_os_component_config.h
++
++all: $(GEN_H)
+ 	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) MOD_SRC_TREE=$(MOD_SRC_TREE) modules $(MODULES_CONFIG) EXTRA_CFLAGS="$(EXTRA_CFLAGS)"
+ 
++$(GEN_H):
++	@rm -f $@
++	@echo "/* Automatically generated file; DO NOT EDIT. */" > $@
++	@echo "#ifndef UB_OS_COMPONENT_CONFIG_H" >> $@
++	@echo "#define UB_OS_COMPONENT_CONFIG_H" >> $@
++	@echo "" >> $@
++	@for opt in $(EXTRA_CFLAGS); do \
++	    case $${opt} in \
++	    -D*=1) \
++	        macro="$${opt#-D}"; \
++	        name="$${macro%%=1}"; \
++	        echo "#define $${name} 1" >> $@; \
++	    ;; \
++	    esac; \
++	done
++	@echo "" >> $@
++	@echo "#endif /* UB_OS_COMPONENT_CONFIG_H */" >> $@
+ 
+ clean:
+ 	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean
+-- 
+2.34.1
+

@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+PACKAGE_NAME=$1
+PACKAGE_VERSION=$2
+DKMS_TREE=$3
+KERNELVER=$4
+ARCH=$(uname -m)
+
+build_dir=$DKMS_TREE/$PACKAGE_NAME/$PACKAGE_VERSION
+DKMS_DEV=${build_dir}/${KERNELVER}/${ARCH}/dev
+
+mkdir -p ${DKMS_DEV}
+
+cp -v ${build_dir}/build/Module.symvers ${DKMS_DEV}/
+cp -r ${build_dir}/build/include ${DKMS_DEV}/
+

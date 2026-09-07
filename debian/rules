@@ -1,51 +1,33 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
-with_devel ?= 0
-export with_devel
-kernelver ?= $(shell uname -r)
-export kernelver
-
 PKG_NAME := $(shell dpkg-parsechangelog -S Source)
 PKG_VERSION := $(shell dpkg-parsechangelog -S Version | cut -d'-' -f1)
 STAGING := $(CURDIR)/debian/tmp
-DKMS_TMP_STAGING := $(CURDIR)/debian/dkms_tmp
 
 %:
-	dh $@
+	dh $@ --with dkms
 
+# DKMS package: do NOT compile kernel modules at package build time.
+# Modules are built on the target machine by DKMS on install and on
+# every kernel upgrade.
 override_dh_auto_build:
-	mkdir -p ${DKMS_TMP_STAGING}
-	cp -a drivers ${DKMS_TMP_STAGING}
 
-	if [ "${with_devel}" = "1" ]; then \
-		make -j`nproc` kernelver=${kernelver} VENDPOR_CFLAGS="${VENDOR_CFLAGS}"; \
-	fi
-
-execute_before_dh_install:
-	sed -i "s/KERNELVER_NEED_TO_REPLACE/${kernelver}/g" debian/ub-os-component-dkms-kmod.install
+# Top-level Makefile 'clean' invokes the kernel build tree, which is not
+# present in the package build chroot. DKMS packaging ships source only,
+# so there is nothing to clean here.
+override_dh_auto_clean:
 
 override_dh_auto_install:
-	mkdir -p $(STAGING)/lib/modules/${kernelver}/updates/
-	mkdir -p $(STAGING)/usr/src/$(PKG_NAME)-dev
-	if [ "${with_devel}" = "1" ]; then \
-		#install ub-os-component-dkms-bin; \
-		find . -name "*.ko" | xargs -I {} cp -a {} $(STAGING)/lib/modules/${kernelver}/updates/ ; \
-		#install ub-os-component-dkms-dev; \
-		cp -a include $(STAGING)/usr/src/$(PKG_NAME)-dev/; \
-		mkdir -p $(STAGING)/usr/include; \
-		mv $(STAGING)/usr/src/$(PKG_NAME)-dev/include/uapi/* $(STAGING)/usr/include/; \
-		rm -rf $(STAGING)/usr/src/$(PKG_NAME)-dev/include/uapi; \
-		cp -a Module.symvers $(STAGING)/usr/src/$(PKG_NAME)-dev/; \
-	else \
-		touch $(STAGING)/lib/modules/${kernelver}/updates/EMPTY_FILE; \
-		touch $(STAGING)/usr/src/$(PKG_NAME)-dev-$(PKG_VERSION)/EMPTY_FILE; \
-	fi
-	
+	#install ub-os-component-dkms-dev
+	mkdir -p $(STAGING)/usr/include
+	mkdir -p $(STAGING)/usr/libexec/$(PKG_NAME)
+	cp -r include/uapi/* $(STAGING)/usr/include/
+	install -m 755 scripts/resolve-artifacts $(STAGING)/usr/libexec/$(PKG_NAME)/
+
 	# install ub-os-component-dkms
-	mkdir -p $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)
-	cp -a dkms.conf $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/
-	cp -a Makefile $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/
-	cp -a include $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/
-	cp -a ${DKMS_TMP_STAGING}/drivers $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/
-	rm -rf ${DKMS_TMP_STAGING}
+	mkdir -p $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/scripts
+	cp -a Makefile include drivers dkms.conf $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/
+	install -m 755 scripts/dkms.postbuild $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/scripts/
+
+
 

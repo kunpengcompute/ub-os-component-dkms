@@ -1,5 +1,12 @@
-ub-os-component-dkms (1.0.2-1) jammy; urgency=medium
+ub-os-component-dkms (1.0.2-2) unstable; urgency=medium
+
+  * delete build binary package. Closes: #0001
+
+ -- will_niutao <niutao2@huawei.com>  Thu, 03 Sep 2026 15:28:00 +0800
+
+ub-os-component-dkms (1.0.2-1) unstable; urgency=medium
 
   * init package release. Closes: #0001
 
  -- will_niutao <niutao2@huawei.com>  Thu, 16 Jul 2026 00:00:00 +0800
+
