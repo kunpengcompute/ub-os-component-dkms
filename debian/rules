@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+export DH_VERBOSE=1
+PKG_NAME := $(shell dpkg-parsechangelog -S Source)
+PKG_VERSION := $(shell dpkg-parsechangelog -S Version | cut -d'-' -f1)
+STAGING := $(CURDIR)/debian/tmp
+
+%:
+	dh $@ --with dkms
+
+# DKMS package: do NOT compile kernel modules at package build time.
+# Modules are built on the target machine by DKMS on install and on
+# every kernel upgrade.
+override_dh_auto_build:
+
+# Top-level Makefile 'clean' invokes the kernel build tree, which is not
+# present in the package build chroot. DKMS packaging ships source only,
+# so there is nothing to clean here.
+override_dh_auto_clean:
+
+override_dh_auto_install:
+	#install ub-os-component-dkms-dev
+	mkdir -p $(STAGING)/usr/include
+	mkdir -p $(STAGING)/usr/libexec/$(PKG_NAME)
+	cp -r include/uapi/* $(STAGING)/usr/include/
+	install -m 755 scripts/resolve-artifacts $(STAGING)/usr/libexec/$(PKG_NAME)/
+
+	# install ub-os-component-dkms
+	mkdir -p $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/scripts
+	cp -a Makefile include drivers dkms.conf $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/
+	install -m 755 scripts/dkms.postbuild $(STAGING)/usr/src/$(PKG_NAME)-$(PKG_VERSION)/scripts/
+
+
+

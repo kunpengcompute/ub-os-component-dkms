@@ -1,0 +1,47 @@
+#!/bin/bash
+set -euo pipefail
+
+usage()
+{
+    echo "Usage: $0 <kernelver>"
+    echo ""
+    echo "Resolve the artifacts directory holding the latest-version"
+    echo "ub-os-component-dkms Module.symvers for a given kernel version"
+    echo ""
+    echo "You can use it in Makefile like:"
+    echo "UB_OS_COMPONENT_BUILD_DIR := \$(shell /usr/libexec/ub-os-component-dkms/resolve-artifacts \$(KERNELRELEASE))"
+    echo "UB_OS_COMPONENT_SYMVERS := \$(UB_COMP_BUILD_DIR)/Module.symvers"
+    echo "UB_OS_COMPONENT_INCLUDE := \$(UB_COMP_BUILD_DIR)/include"
+    echo ""
+
+    exit 1
+}
+
+[[ $# -ne 1 ]] && usage >&2
+
+KERNELVER="$1"
+ARCH=$(uname -m)
+DKMS_TREE="/var/lib/dkms"
+PKG_NAME="ub-os-component-dkms"
+PKG_BASE="${DKMS_TREE}/${PKG_NAME}"
+PKG_LATEST_VERSION="$(ls ${PKG_BASE} 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)"
+
+if [ "${PKG_LATEST_VERSION}" == "" ]; then
+    echo "ERROR: no dkms registered for ${PKG_NAME} under ${DKMS_TREE}" >&2
+    exit 2
+fi
+
+
+if [ ! -d "${PKG_BASE}/${PKG_LATEST_VERSION}/${KERNELVER}/${ARCH}/dev" ]; then
+    echo "ERROR: ${PKG_BASE}/${PKG_LATEST_VERSION} has NOT been built for kernel ${KERNELVER}" >&2
+    exit 3
+fi
+
+if [ ! -f "${PKG_BASE}/${PKG_LATEST_VERSION}/${KERNELVER}/${ARCH}/dev/Module.symvers" -o \
+     ! -f "${PKG_BASE}/${PKG_LATEST_VERSION}/${KERNELVER}/${ARCH}/dev/include/ub_os_component_config.h" ]; then
+    echo "ERROR: Module.symvers or ub_os_component_config.h has NOT been built for kernel ${KERNELVER}" >&2
+    exit 4
+fi
+
+echo -n "${PKG_BASE}/${PKG_LATEST_VERSION}/${KERNELVER}/${ARCH}/dev"
+exit 0

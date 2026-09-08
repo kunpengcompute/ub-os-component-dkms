@@ -1,0 +1,20 @@
+Source: ub-os-component-dkms
+Maintainer: will_niutao <niutao2@huawei.com>
+Section: kernel
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13), dkms, dh-sequence-dkms
+
+Package: ub-os-component-dkms
+Architecture: arm64
+Depends: dkms, ${misc:Depends}
+Description: UB OS Component (DKMS)
+ The Out-Of-Tree kernel modules of UB OS Component, built on the
+ target machine via DKMS on install and on every kernel upgrade.
+
+Package: ub-os-component-dkms-dev
+Architecture: all
+Depends: ub-os-component-dkms
+Description: UB OS component development package
+ UB OS component development files, including public header files
+ for secondary development against UB OS Component.
